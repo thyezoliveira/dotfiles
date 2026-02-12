@@ -25,5 +25,7 @@ cd "$TEMP_DIR"
 ansible-playbook playbook.yml
 
 # Limpar
+rm -rf "$TEMP_DIR"
+echo "Diretorio temporário $TEMP_DIR removido!"
 
 echo "✅ Configuração concluída!"
