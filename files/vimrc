@@ -1,0 +1,99 @@
+call plug#begin('~/.vim/plugged')
+
+" Barra lateral de arquivos
+Plug 'preservim/nerdtree'
+Plug 'ryanoasis/vim-devicons'  " Ícones (requer Nerd Font)
+
+" Autocompletar inteligente
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+" Busca fuzzy de arquivos
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+
+" Syntax highlighting e coloração
+Plug 'sheerun/vim-polyglot'
+Plug 'morhetz/gruvbox'  " Tema
+
+" Barra de status
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+
+" Git integration
+Plug 'tpope/vim-fugitive'
+Plug 'airblade/vim-gitgutter'
+
+" Linter e formatação
+Plug 'dense-analysis/ale'
+
+" Comentários rápidos
+Plug 'tpope/vim-commentary'
+
+" Auto-fechamento de parênteses
+Plug 'jiangmiao/auto-pairs'
+
+call plug#end()
+
+" Configurações básicas
+syntax on
+set number
+set relativenumber
+set mouse=a
+set encoding=UTF-8
+set expandtab
+set tabstop=2
+set shiftwidth=2
+set smartindent
+
+" Tema
+colorscheme gruvbox
+set background=dark
+
+" NERDTree
+nnoremap <C-n> :NERDTreeToggle<CR>
+let NERDTreeShowHidden=1
+
+" FZF
+nnoremap <C-p> :Files<CR>
+nnoremap <C-f> :Rg<CR>
+
+" COC - Autocompletar
+" Use Tab para navegar no autocomplete
+inoremap <silent><expr> <TAB>
+      \ coc#pum#visible() ? coc#pum#next(1) :
+      \ CheckBackspace() ? "\<Tab>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+
+function! CheckBackspace() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+" GoTo code navigation
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+" ALE - Linter
+let g:ale_linters = {
+\   'javascript': ['eslint'],
+\   'python': ['flake8', 'pylint'],
+\   'go': ['golint'],
+\}
+let g:ale_fixers = {
+\   '*': ['remove_trailing_lines', 'trim_whitespace'],
+\   'javascript': ['prettier', 'eslint'],
+\   'python': ['black'],
+\}
+let g:ale_fix_on_save = 1
+
+" Salvar com Ctrl+S no modo normal
+nnoremap <C-s> :w<CR>
+
+" Salvar com Ctrl+S no modo insert (e voltar ao modo insert)
+inoremap <C-s> <Esc>:w<CR>a
+
+" Salvar com Ctrl+S no modo visual
+vnoremap <C-s> <Esc>:w<CR>
