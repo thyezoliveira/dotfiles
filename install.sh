@@ -28,7 +28,7 @@ elif [ "$MACHINE" == "Mac" ]; then
         # Adiciona Homebrew ao PATH temporariamente se for a primeira instalação
         eval "$(/opt/homebrew/bin/brew shellenv)" || eval "$(/usr/local/bin/brew shellenv)"
     fi
-    brew update
+    brew update || true
     brew install vim git curl python3 node zsh unzip
 fi
 
