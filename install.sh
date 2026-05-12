@@ -5,12 +5,32 @@
 # -o pipefail: Garante que erros em pipes sejam capturados
 set -euo pipefail
 
-echo "--- [SRE] Iniciando Provisionamento de Ambiente de Elite ---"
+# Detecção de Sistema Operacional
+OS="$(uname)"
+case "${OS}" in
+    Linux*)     MACHINE=Linux;;
+    Darwin*)    MACHINE=Mac;;
+    *)          echo "Sistema não suportado: ${OS}"; exit 1;;
+esac
+
+echo "--- [SRE] Iniciando Provisionamento de Ambiente de Elite ($MACHINE) ---"
 
 # 1. Dependências de Sistema e Zsh
 echo ">> Instalando pacotes base e Zsh..."
-sudo apt update
-sudo apt install -y vim git curl fontconfig python3 python3-pip nodejs npm zsh unzip
+if [ "$MACHINE" == "Linux" ]; then
+    sudo apt update
+    sudo apt install -y vim git curl fontconfig python3 python3-pip nodejs npm zsh unzip
+elif [ "$MACHINE" == "Mac" ]; then
+    # Verifica se Homebrew está instalado
+    if ! command -v brew &> /dev/null; then
+        echo ">> Homebrew não encontrado. Instalando..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # Adiciona Homebrew ao PATH temporariamente se for a primeira instalação
+        eval "$(/opt/homebrew/bin/brew shellenv)" || eval "$(/usr/local/bin/brew shellenv)"
+    fi
+    brew update
+    brew install vim git curl python3 node zsh unzip
+fi
 
 # 2. Instalação do 'uv' (Python Manager de alta performance)
 echo ">> Instalando uv..."
@@ -32,15 +52,26 @@ curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
 
 # 5. Ubuntu Mono Nerd Font
 echo ">> Instalando Nerd Fonts..."
-FONT_DIR="$HOME/.local/share/fonts"
-mkdir -p "$FONT_DIR"
-cd "$FONT_DIR"
-if [ ! -f "UbuntuMono.zip" ]; then
-    curl -fLO https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/UbuntuMono.zip
-    unzip -o UbuntuMono.zip
-    fc-cache -fv
+if [ "$MACHINE" == "Linux" ]; then
+    FONT_DIR="$HOME/.local/share/fonts"
+    mkdir -p "$FONT_DIR"
+    cd "$FONT_DIR"
+    if [ ! -f "UbuntuMono.zip" ]; then
+        curl -fLO https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/UbuntuMono.zip
+        unzip -o UbuntuMono.zip
+        fc-cache -fv
+    fi
+    cd -
+elif [ "$MACHINE" == "Mac" ]; then
+    FONT_DIR="$HOME/Library/Fonts"
+    mkdir -p "$FONT_DIR"
+    cd "$FONT_DIR"
+    if [ ! -f "UbuntuMono.zip" ]; then
+        curl -fLO https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/UbuntuMono.zip
+        unzip -o UbuntuMono.zip
+    fi
+    cd -
 fi
-cd -
 
 # 6. Configuração do .vimrc
 cat <<EOF > ~/.vimrc
@@ -78,7 +109,18 @@ cd -
 
 # 8. Troca de Shell para Zsh
 echo ">> Definindo Zsh como shell padrão..."
-sudo chsh -s "$(which zsh)" "$USER"
+ZSH_PATH="$(which zsh)"
+if [ "$SHELL" != "$ZSH_PATH" ]; then
+    echo ">> Mudando shell para $ZSH_PATH..."
+    if [ "$MACHINE" == "Linux" ]; then
+        sudo chsh -s "$ZSH_PATH" "$USER"
+    elif [ "$MACHINE" == "Mac" ]; then
+        if ! grep -q "$ZSH_PATH" /etc/shells; then
+            echo "$ZSH_PATH" | sudo tee -a /etc/shells
+        fi
+        sudo chsh -s "$ZSH_PATH" "$USER"
+    fi
+fi
 
 echo "--- [CONCLUÍDO] ---"
 echo "Ação Necessária: Reinicie o terminal ou execute 'zsh' para entrar no novo ambiente."
